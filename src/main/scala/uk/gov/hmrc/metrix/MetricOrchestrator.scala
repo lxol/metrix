@@ -17,8 +17,9 @@
 package uk.gov.hmrc.metrix
 
 import com.codahale.metrics.{Gauge, MetricRegistry}
+import play.api.Logger
 import uk.gov.hmrc.lock.ExclusiveTimePeriodLock
-import uk.gov.hmrc.metrix.domain.{MetricCount, MetricRepository, MetricSource}
+import uk.gov.hmrc.metrix.domain.{MetricRepository, MetricSource, PersistedMetric}
 
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
@@ -27,7 +28,7 @@ class MetricCache {
 
   private val cache = mutable.Map[String, Int]()
 
-  def refreshWith(allMetrics: List[MetricCount]) = {
+  def refreshWith(allMetrics: List[PersistedMetric]) = {
     allMetrics.foreach(m => cache.put(m.name, m.count))
     val asMap: Map[String, Int] = allMetrics.map(m => m.name -> m.count).toMap
     cache.keys.foreach(key => if (!asMap.contains(key)) cache.remove(key))
@@ -39,6 +40,33 @@ class MetricCache {
 final case class CachedMetricGauge(name: String, metrics: MetricCache) extends Gauge[Int] {
   override def getValue: Int = metrics.valueOf(name)
 }
+
+trait MetricOrchestrationResult {
+  def andLogTheResult()
+}
+
+final case class MetricsUpdatedAndRefreshed(updatedMetrics: Map[String, Int],
+                                            refreshedMetrics: Seq[PersistedMetric]) extends MetricOrchestrationResult {
+  override def andLogTheResult(): Unit = {
+    Logger.info(s"I have acquired the lock. Both update and refresh have been performed.")
+    Logger.debug(
+      s"""
+         | The updated metrics coming from sources are: $updatedMetrics.
+         | Metrics refreshed on the cache are: $refreshedMetrics
+       """.stripMargin)
+  }
+}
+
+final case class MetricsOnlyRefreshed(refreshedMetrics: List[PersistedMetric]) extends MetricOrchestrationResult {
+  override def andLogTheResult(): Unit = {
+    Logger.info(s"I have failed to acquire the lock. Therefore only refresh has been performed.")
+    Logger.debug(
+      s"""
+         | Metrics refreshed on the cache are: $refreshedMetrics
+       """.stripMargin)
+  }
+}
+
 
 class MetricOrchestrator(metricSources: List[MetricSource],
                          lock: ExclusiveTimePeriodLock,
@@ -52,29 +80,28 @@ class MetricOrchestrator(metricSources: List[MetricSource],
       .map(list => {
         val currentMetrics: Map[String, Int] = list reduce (_ ++ _)
         currentMetrics.foreach {
-          case (name, value) => metricRepository.persist(MetricCount(name, value))
+          case (name, value) => metricRepository.persist(PersistedMetric(name, value))
         }
         currentMetrics
       })
   }
 
-  def refreshAll()(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
+  def attemptToUpdateAndRefreshMetrics()(implicit ec: ExecutionContext): Future[MetricOrchestrationResult] = {
+    lock.tryToAcquireOrRenewLock {
+      updateMetricRepository
+    } flatMap { maybeUpdatedMetrics =>
+      metricRepository.findAll() map { allMetrics =>
+        metricCache.refreshWith(allMetrics)
 
-    for {
-      updated <- lock.tryToAcquireOrRenewLock {
-        updateMetricRepository
+        allMetrics
+          .foreach(metric => if (!metricRegistry.getGauges.containsKey(metric.name))
+            metricRegistry.register(metric.name, CachedMetricGauge(metric.name, metricCache)))
+
+        maybeUpdatedMetrics match {
+          case Some(updatedMetrics) => MetricsUpdatedAndRefreshed(updatedMetrics, allMetrics)
+          case None => MetricsOnlyRefreshed(allMetrics)
+        }
       }
-      allMetrics <- metricRepository.findAll()
-    } yield {
-
-      metricCache.refreshWith(allMetrics)
-
-      allMetrics
-        .foreach(metric => if (!metricRegistry.getGauges.containsKey(metric.name))
-          metricRegistry.register(metric.name, CachedMetricGauge(metric.name, metricCache)))
-
-      allMetrics.map(m => m.name -> m.count).toMap
-
     }
   }
 }

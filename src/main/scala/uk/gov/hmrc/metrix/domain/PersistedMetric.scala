@@ -16,4 +16,4 @@
 
 package uk.gov.hmrc.metrix.domain
 
-final case class MetricCount(name: String, count: Int)
+final case class PersistedMetric(name: String, count: Int)

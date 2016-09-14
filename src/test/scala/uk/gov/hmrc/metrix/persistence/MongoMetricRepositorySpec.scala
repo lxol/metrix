@@ -18,7 +18,7 @@ package uk.gov.hmrc.metrix.persistence
 
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterEach, LoneElement}
-import uk.gov.hmrc.metrix.domain.MetricCount
+import uk.gov.hmrc.metrix.domain.PersistedMetric
 import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -43,7 +43,7 @@ class MongoMetricRepositorySpec extends UnitSpec with MongoSpecSupport with Scal
 
   "update" should {
     "store the provided MetricsStorage instance with the 'name' key" in {
-      val storedMetric = MetricCount("test-metric", 5)
+      val storedMetric = PersistedMetric("test-metric", 5)
 
       metricsRepo.persist(storedMetric).futureValue
 

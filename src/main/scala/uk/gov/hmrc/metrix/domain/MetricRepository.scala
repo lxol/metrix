@@ -19,6 +19,6 @@ package uk.gov.hmrc.metrix.domain
 import scala.concurrent.{ExecutionContext, Future}
 
 trait MetricRepository {
-  def persist(metricCount: MetricCount)(implicit ec: ExecutionContext): Future[Unit]
-  def findAll()(implicit ec: ExecutionContext): Future[List[MetricCount]]
+  def persist(calculatedMetric: PersistedMetric)(implicit ec: ExecutionContext): Future[Unit]
+  def findAll()(implicit ec: ExecutionContext): Future[List[PersistedMetric]]
 }

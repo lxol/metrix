@@ -20,29 +20,27 @@ import play.api.libs.json.{JsObject, Json}
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.api.{DB, ReadPreference}
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.metrix.domain.{MetricRepository, MetricCount}
+import uk.gov.hmrc.metrix.domain.{MetricRepository, PersistedMetric}
 import uk.gov.hmrc.mongo.ReactiveRepository
 
 import scala.concurrent.{ExecutionContext, Future}
 
-
-
 class MongoMetricRepository(collectionName: String = "metrics")(implicit mongo: () => DB)
-  extends ReactiveRepository[MetricCount, BSONObjectID](collectionName, mongo, Json.format[MetricCount])
+  extends ReactiveRepository[PersistedMetric, BSONObjectID](collectionName, mongo, Json.format[PersistedMetric])
   with MetricRepository {
 
   override def indexes: Seq[Index] = Seq(
     Index(key = Seq("name" -> IndexType.Ascending), name = Some("metric_key_idx"), unique = true, background = true)
   )
 
-  override def findAll()(implicit ec: ExecutionContext): Future[List[MetricCount]] =
+  override def findAll()(implicit ec: ExecutionContext): Future[List[PersistedMetric]] =
     findAll(ReadPreference.secondaryPreferred)
 
-  def persist(metricCount: MetricCount)(implicit ec: ExecutionContext) =
+  def persist(calculatedMetric: PersistedMetric)(implicit ec: ExecutionContext) =
     collection.findAndUpdate(
-      selector = Json.obj("name" -> metricCount.name),
-      update = Json.toJson(metricCount).as[JsObject],
+      selector = Json.obj("name" -> calculatedMetric.name),
+      update = Json.toJson(calculatedMetric).as[JsObject],
       upsert = true,
       fetchNewObject = true
-    ).map(_.result[MetricCount])
+    ).map(_.result[PersistedMetric])
 }

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.metrix
 
-import uk.gov.hmrc.metrix.domain.MetricCount
+import uk.gov.hmrc.metrix.domain.PersistedMetric
 import uk.gov.hmrc.play.test.UnitSpec
 
 class MetricCacheSpec extends UnitSpec {
@@ -25,7 +25,7 @@ class MetricCacheSpec extends UnitSpec {
 
     "initialize with a list of metrics" in {
       val metrics = new MetricCache()
-      metrics.refreshWith(List(MetricCount("a", 1), MetricCount("b", 2)))
+      metrics.refreshWith(List(PersistedMetric("a", 1), PersistedMetric("b", 2)))
 
       metrics.valueOf("a") shouldBe 1
       metrics.valueOf("b") shouldBe 2
@@ -34,12 +34,12 @@ class MetricCacheSpec extends UnitSpec {
     "add elements that were not present before" in {
       val metrics = new MetricCache()
 
-      metrics.refreshWith(List(MetricCount("a", 1)))
+      metrics.refreshWith(List(PersistedMetric("a", 1)))
 
       metrics.valueOf("a") shouldBe 1
       metrics.valueOf("b") shouldBe 0
 
-      metrics.refreshWith(List(MetricCount("a", 1), MetricCount("b", 2)))
+      metrics.refreshWith(List(PersistedMetric("a", 1), PersistedMetric("b", 2)))
 
       metrics.valueOf("a") shouldBe 1
       metrics.valueOf("b") shouldBe 2
@@ -49,12 +49,12 @@ class MetricCacheSpec extends UnitSpec {
     "remove elements that are no longer there" in {
       val metrics = new MetricCache()
 
-      metrics.refreshWith(List(MetricCount("a", 1), MetricCount("b", 2)))
+      metrics.refreshWith(List(PersistedMetric("a", 1), PersistedMetric("b", 2)))
 
       metrics.valueOf("a") shouldBe 1
       metrics.valueOf("b") shouldBe 2
 
-      metrics.refreshWith(List(MetricCount("a", 1)))
+      metrics.refreshWith(List(PersistedMetric("a", 1)))
 
       metrics.valueOf("a") shouldBe 1
       metrics.valueOf("b") shouldBe 0
