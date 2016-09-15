@@ -48,7 +48,7 @@ trait MetricOrchestrationResult {
 final case class MetricsUpdatedAndRefreshed(updatedMetrics: Map[String, Int],
                                             refreshedMetrics: Seq[PersistedMetric]) extends MetricOrchestrationResult {
   override def andLogTheResult(): Unit = {
-    Logger.info(s"I have acquired the lock. Both update and refresh have been performed.")
+    Logger.info(s"Acquired the lock. Both update and refresh have been performed.")
     Logger.debug(
       s"""
          | The updated metrics coming from sources are: $updatedMetrics.
@@ -59,7 +59,7 @@ final case class MetricsUpdatedAndRefreshed(updatedMetrics: Map[String, Int],
 
 final case class MetricsOnlyRefreshed(refreshedMetrics: List[PersistedMetric]) extends MetricOrchestrationResult {
   override def andLogTheResult(): Unit = {
-    Logger.info(s"I have failed to acquire the lock. Therefore only refresh has been performed.")
+    Logger.info(s"Failed to acquire the lock. Therefore only refresh has been performed.")
     Logger.debug(
       s"""
          | Metrics refreshed on the cache are: $refreshedMetrics
@@ -91,6 +91,7 @@ class MetricOrchestrator(metricSources: List[MetricSource],
       updateMetricRepository
     } flatMap { maybeUpdatedMetrics =>
       metricRepository.findAll() map { allMetrics =>
+
         metricCache.refreshWith(allMetrics)
 
         allMetrics
