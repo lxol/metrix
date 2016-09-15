@@ -38,7 +38,11 @@ class MetricCache {
 }
 
 final case class CachedMetricGauge(name: String, metrics: MetricCache) extends Gauge[Int] {
-  override def getValue: Int = metrics.valueOf(name)
+  override def getValue: Int = {
+    val value = metrics.valueOf(name)
+    Logger.debug(s"Gauge for metric $name is reporting on value: $value")
+    value
+  }
 }
 
 trait MetricOrchestrationResult {
