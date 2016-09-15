@@ -17,11 +17,11 @@
 package uk.gov.hmrc.metrix
 
 import com.codahale.metrics.{Metric, MetricFilter, MetricRegistry}
-import com.kenshoo.play.metrics.MetricsFilter
 import org.joda.time.Duration
+import org.scalatest.Inside._
 import org.mockito.Matchers.any
 import org.mockito.Mockito._
-import org.scalatest.{BeforeAndAfterEach, LoneElement}
+import org.scalatest.{BeforeAndAfterEach, Inside, LoneElement}
 import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
 import org.scalatest.mock.MockitoSugar
 import uk.gov.hmrc.lock.{ExclusiveTimePeriodLock, LockRepository}
@@ -65,10 +65,11 @@ class MetricOrchestratorSpec extends UnitSpec
 
   private val mongoMetricRepository = new MongoMetricRepository
 
-  def metricOrchestratorFor(sources: List[MetricSource]) = new MetricOrchestrator(
+  def metricOrchestratorFor(sources: List[MetricSource],
+                            metricRepository: MetricRepository = mongoMetricRepository) = new MetricOrchestrator(
     metricSources = sources,
     lock = exclusiveTimePeriodLock,
-    metricRepository = mongoMetricRepository,
+    metricRepository = metricRepository,
     metricRegistry = metricRegistry
   )
 
@@ -108,11 +109,10 @@ class MetricOrchestratorSpec extends UnitSpec
 
       val acquiredMetrics = Map("a" -> 1, "b" -> 2)
 
-
       val registry = metricOrchestratorFor(List(sourceReturning(acquiredMetrics)))
 
       // when
-      registry.attemptToUpdateAndRefreshMetrics().futureValue shouldBe MetricsUpdatedAndRefreshed(
+      registry.attemptToUpdateAndRefreshMetrics().futureValue shouldResultIn MetricsUpdatedAndRefreshed(
         acquiredMetrics,
         persistedMetricsFrom(acquiredMetrics)
       )
@@ -131,7 +131,7 @@ class MetricOrchestratorSpec extends UnitSpec
       ))
 
       // when
-      registry.attemptToUpdateAndRefreshMetrics().futureValue shouldBe MetricsUpdatedAndRefreshed(
+      registry.attemptToUpdateAndRefreshMetrics().futureValue shouldResultIn MetricsUpdatedAndRefreshed(
         acquiredMetrics ++ otherAcquiredMetrics,
         persistedMetricsFrom(acquiredMetrics ++ otherAcquiredMetrics)
       )
@@ -183,7 +183,7 @@ class MetricOrchestratorSpec extends UnitSpec
         .thenReturn(Future[Unit]())
 
       // when
-      mockedRegistry.attemptToUpdateAndRefreshMetrics().futureValue shouldBe MetricsUpdatedAndRefreshed(
+      mockedRegistry.attemptToUpdateAndRefreshMetrics().futureValue shouldResultIn MetricsUpdatedAndRefreshed(
         acquiredMetrics,
         persistedMetricsFrom(acquiredMetrics) :+ PersistedMetric("z", 8)
       )
@@ -220,7 +220,7 @@ class MetricOrchestratorSpec extends UnitSpec
         .thenReturn(Future(List(PersistedMetric("a", 4), PersistedMetric("b", 5))))
 
       // when
-      metricOrchestrator.attemptToUpdateAndRefreshMetrics().futureValue shouldBe MetricsOnlyRefreshed(
+      metricOrchestrator.attemptToUpdateAndRefreshMetrics().futureValue shouldResultIn MetricsOnlyRefreshed(
         List(PersistedMetric("a", 4), PersistedMetric("b", 5))
       )
 
@@ -232,6 +232,48 @@ class MetricOrchestratorSpec extends UnitSpec
       verifyNoMoreInteractions(mockedMetricRepository)
     }
 
+
+    "gauges are registered after all metrics are written to mongo even if writing takes a long time" in {
+
+      val acquiredMetrics = Map("a" -> 1, "b" -> 2)
+
+      val registry = metricOrchestratorFor(
+        sources = List(sourceReturning(acquiredMetrics)),
+        metricRepository = new SlowlyWritingMetricRepository
+      )
+
+      // when
+      registry.attemptToUpdateAndRefreshMetrics().futureValue shouldResultIn MetricsUpdatedAndRefreshed(
+        acquiredMetrics,
+        persistedMetricsFrom(acquiredMetrics)
+      )
+
+      metricRegistry.getGauges.get(s"a").getValue shouldBe 1
+      metricRegistry.getGauges.get(s"b").getValue shouldBe 2
+    }
+
+    class SlowlyWritingMetricRepository extends MongoMetricRepository {
+      override def persist(calculatedMetric: PersistedMetric)(implicit ec: ExecutionContext): Future[Unit] = {
+        Future(Thread.sleep(200)).flatMap(_ => super.persist(calculatedMetric))
+      }
+    }
+
+    implicit class MetricOrchestrationResultComparison(metricUpdateResult: MetricOrchestrationResult) {
+      def shouldResultIn(expectedUpdateResult: MetricsOnlyRefreshed): Unit = {
+        inside(metricUpdateResult) {
+          case MetricsOnlyRefreshed(refreshedMetrics) =>
+            refreshedMetrics should contain theSameElementsAs expectedUpdateResult.refreshedMetrics
+        }
+      }
+
+      def shouldResultIn(expectedUpdateResult: MetricsUpdatedAndRefreshed): Unit = {
+        inside(metricUpdateResult) {
+          case MetricsUpdatedAndRefreshed(updatedMetrics, refreshedMetrics) =>
+            updatedMetrics shouldBe expectedUpdateResult.updatedMetrics
+            refreshedMetrics should contain theSameElementsAs expectedUpdateResult.refreshedMetrics
+        }
+      }
+    }
   }
 }
 

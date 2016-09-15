@@ -81,12 +81,14 @@ class MetricOrchestrator(metricSources: List[MetricSource],
 
   private def updateMetricRepository()(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
     Future.traverse(metricSources) { source => source.metrics }
-      .map(list => {
+      .flatMap(list => {
         val currentMetrics: Map[String, Int] = list reduce (_ ++ _)
-        currentMetrics.foreach {
+
+        Future.traverse(currentMetrics) {
           case (name, value) => metricRepository.persist(PersistedMetric(name, value))
+        }.map {_ =>
+          currentMetrics
         }
-        currentMetrics
       })
   }
 
@@ -94,6 +96,7 @@ class MetricOrchestrator(metricSources: List[MetricSource],
     lock.tryToAcquireOrRenewLock {
       updateMetricRepository
     } flatMap { maybeUpdatedMetrics =>
+
       metricRepository.findAll() map { allMetrics =>
 
         metricCache.refreshWith(allMetrics)
