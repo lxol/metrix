@@ -109,10 +109,10 @@ class MetricOrchestratorSpec extends UnitSpec
 
       val acquiredMetrics = Map("a" -> 1, "b" -> 2)
 
-      val registry = metricOrchestratorFor(List(sourceReturning(acquiredMetrics)))
+      val orchestrator = metricOrchestratorFor(List(sourceReturning(acquiredMetrics)))
 
       // when
-      registry.attemptToUpdateAndRefreshMetrics().futureValue shouldResultIn MetricsUpdatedAndRefreshed(
+      orchestrator.attemptToUpdateAndRefreshMetrics().futureValue shouldResultIn MetricsUpdatedAndRefreshed(
         acquiredMetrics,
         persistedMetricsFrom(acquiredMetrics)
       )
@@ -125,13 +125,13 @@ class MetricOrchestratorSpec extends UnitSpec
       val acquiredMetrics = Map("a" -> 1, "b" -> 2)
       val otherAcquiredMetrics = Map("z" -> 3, "x" -> 4)
 
-      val registry = metricOrchestratorFor(List(
+      val orchestrator = metricOrchestratorFor(List(
         sourceReturning(acquiredMetrics),
         sourceReturning(otherAcquiredMetrics)
       ))
 
       // when
-      registry.attemptToUpdateAndRefreshMetrics().futureValue shouldResultIn MetricsUpdatedAndRefreshed(
+      orchestrator.attemptToUpdateAndRefreshMetrics().futureValue shouldResultIn MetricsUpdatedAndRefreshed(
         acquiredMetrics ++ otherAcquiredMetrics,
         persistedMetricsFrom(acquiredMetrics ++ otherAcquiredMetrics)
       )
@@ -143,25 +143,54 @@ class MetricOrchestratorSpec extends UnitSpec
 
     }
 
-    "updates the metrics when the source changes" in {
+    "update the metrics when the source changes" in {
       val firstMetrics = Map("metric1" -> 32, "metric2" -> 43)
       val secondMetrics = Map("metric1" -> 11, "metric2" -> 87, "metric3" -> 22)
-      val registry = metricOrchestratorFor(List(
+      val orchestrator = metricOrchestratorFor(List(
         sourceReturningFirstAndThen(firstMetrics, secondMetrics)
       ))
 
       // when
-      registry.attemptToUpdateAndRefreshMetrics().futureValue
+      orchestrator.attemptToUpdateAndRefreshMetrics().futureValue
 
       metricRegistry.getGauges.get("metric1").getValue shouldBe 32
       metricRegistry.getGauges.get("metric2").getValue shouldBe 43
 
       // when
-      registry.attemptToUpdateAndRefreshMetrics().futureValue
+      orchestrator.attemptToUpdateAndRefreshMetrics().futureValue
 
       metricRegistry.getGauges.get("metric1").getValue shouldBe 11
       metricRegistry.getGauges.get("metric2").getValue shouldBe 87
       metricRegistry.getGauges.get("metric3").getValue shouldBe 22
+    }
+
+    "skip reporting all the metrics matching when the skip filter matches all" in {
+      val acquiredMetrics = Map("opened.name" -> 4, "ravaged.name" -> 2, "not.ravaged.name" -> 8)
+      val orchestrator = metricOrchestratorFor(List(sourceReturning(acquiredMetrics)))
+
+      orchestrator.attemptToUpdateAndRefreshMetrics(
+        skipReportingOn = (metric: PersistedMetric) => true
+      ).futureValue shouldResultIn MetricsUpdatedAndRefreshed(acquiredMetrics, Seq.empty)
+
+      metricRegistry.getGauges shouldBe empty
+    }
+
+    "skip reporting the metrics matching the specific skip filter" in {
+      val openedMetricName = "opened.name"
+      val notRavagedMetricName = "not.ravaged.name"
+      val acquiredMetrics = Map(openedMetricName -> 4, "ravaged.name" -> 2, notRavagedMetricName -> 8)
+      val orchestrator = metricOrchestratorFor(List(sourceReturning(acquiredMetrics)))
+
+      orchestrator.attemptToUpdateAndRefreshMetrics(skipReportingOn = (metric: PersistedMetric) => {
+        metric.name.contains("ravaged") && metric.count < 3
+      }).futureValue shouldResultIn MetricsUpdatedAndRefreshed(
+        acquiredMetrics,
+        List(PersistedMetric(openedMetricName, 4), PersistedMetric(notRavagedMetricName, 8))
+      )
+
+      metricRegistry.getGauges should have size 2
+      metricRegistry.getGauges.get(openedMetricName).getValue shouldBe 4
+      metricRegistry.getGauges.get(notRavagedMetricName).getValue shouldBe 8
     }
 
     "cache the metrics" in {
@@ -169,7 +198,7 @@ class MetricOrchestratorSpec extends UnitSpec
 
       val metricRepository: MetricRepository = mock[MetricRepository]
 
-      val mockedRegistry = new MetricOrchestrator(
+      val orchestrator = new MetricOrchestrator(
         metricRepository = metricRepository,
         metricSources = List(sourceReturning(acquiredMetrics)),
         lock = exclusiveTimePeriodLock,
@@ -183,7 +212,7 @@ class MetricOrchestratorSpec extends UnitSpec
         .thenReturn(Future[Unit]())
 
       // when
-      mockedRegistry.attemptToUpdateAndRefreshMetrics().futureValue shouldResultIn MetricsUpdatedAndRefreshed(
+      orchestrator.attemptToUpdateAndRefreshMetrics().futureValue shouldResultIn MetricsUpdatedAndRefreshed(
         acquiredMetrics,
         persistedMetricsFrom(acquiredMetrics) :+ PersistedMetric("z", 8)
       )
@@ -206,7 +235,7 @@ class MetricOrchestratorSpec extends UnitSpec
         override val holdLockFor: Duration = Duration.millis(1)
       }
 
-      val metricOrchestrator = new MetricOrchestrator(
+      val orchestrator = new MetricOrchestrator(
         metricRepository = mockedMetricRepository,
         metricSources = List(sourceReturning(Map("a" -> 1, "b" -> 2))),
         lock = lockMock,
@@ -220,7 +249,7 @@ class MetricOrchestratorSpec extends UnitSpec
         .thenReturn(Future(List(PersistedMetric("a", 4), PersistedMetric("b", 5))))
 
       // when
-      metricOrchestrator.attemptToUpdateAndRefreshMetrics().futureValue shouldResultIn MetricsOnlyRefreshed(
+      orchestrator.attemptToUpdateAndRefreshMetrics().futureValue shouldResultIn MetricsOnlyRefreshed(
         List(PersistedMetric("a", 4), PersistedMetric("b", 5))
       )
 
@@ -237,13 +266,13 @@ class MetricOrchestratorSpec extends UnitSpec
 
       val acquiredMetrics = Map("a" -> 1, "b" -> 2)
 
-      val registry = metricOrchestratorFor(
+      val orchestrator = metricOrchestratorFor(
         sources = List(sourceReturning(acquiredMetrics)),
         metricRepository = new SlowlyWritingMetricRepository
       )
 
       // when
-      registry.attemptToUpdateAndRefreshMetrics().futureValue shouldResultIn MetricsUpdatedAndRefreshed(
+      orchestrator.attemptToUpdateAndRefreshMetrics().futureValue shouldResultIn MetricsUpdatedAndRefreshed(
         acquiredMetrics,
         persistedMetricsFrom(acquiredMetrics)
       )

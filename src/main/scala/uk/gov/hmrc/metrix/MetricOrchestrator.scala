@@ -92,22 +92,26 @@ class MetricOrchestrator(metricSources: List[MetricSource],
       })
   }
 
-  def attemptToUpdateAndRefreshMetrics()(implicit ec: ExecutionContext): Future[MetricOrchestrationResult] = {
+  private def doNotSkipAny(metric: PersistedMetric): Boolean = false
+
+  def attemptToUpdateAndRefreshMetrics(skipReportingOn: (PersistedMetric) => Boolean = doNotSkipAny)
+                                      (implicit ec: ExecutionContext): Future[MetricOrchestrationResult] = {
     lock.tryToAcquireOrRenewLock {
       updateMetricRepository
     } flatMap { maybeUpdatedMetrics =>
+      metricRepository.findAll() map { persistedMetrics =>
+        persistedMetrics.filterNot(skipReportingOn)
+      } map { filteredMetrics =>
 
-      metricRepository.findAll() map { allMetrics =>
+        metricCache.refreshWith(filteredMetrics)
 
-        metricCache.refreshWith(allMetrics)
-
-        allMetrics
+        filteredMetrics
           .foreach(metric => if (!metricRegistry.getGauges.containsKey(metric.name))
             metricRegistry.register(metric.name, CachedMetricGauge(metric.name, metricCache)))
 
         maybeUpdatedMetrics match {
-          case Some(updatedMetrics) => MetricsUpdatedAndRefreshed(updatedMetrics, allMetrics)
-          case None => MetricsOnlyRefreshed(allMetrics)
+          case Some(updatedMetrics) => MetricsUpdatedAndRefreshed(updatedMetrics, filteredMetrics)
+          case None => MetricsOnlyRefreshed(filteredMetrics)
         }
       }
     }
