@@ -25,23 +25,23 @@ object HmrcBuild extends Build {
   import uk.gov.hmrc.versioning.SbtGitVersioning
 
 
-  val appDependencies = Seq(
-    play                   % "provided",
-    `simple-reactivemongo`,
-    `metrics-play`         % "provided",
-    metrics                % "provided",
-    mongoLock,
-
-    scalaTest   % "test",
-    pegdown     % "test",
-    scalacheck  % "test",
-    `play-test` % "test",
-    `reactivemongo-test` % "test",
-    hmrcTest
-  )
-
-
   val appName = "metrix"
+
+  val appDependencies = Seq(
+    "com.typesafe.play"      %% "play"                 % PlayVersion.current % "provided",
+    "uk.gov.hmrc"            %% "simple-reactivemongo" % "5.1.0",
+    "de.threedimensions"     %% "metrics-play"         % "2.5.13"            % "provided",
+    "com.codahale.metrics"   %  "metrics-graphite"     % "3.0.2"             % "provided",
+    "uk.gov.hmrc"            %% "mongo-lock"           % "4.0.0",
+
+    "org.scalatest"          %% "scalatest"            % "2.2.4"             % "test",
+    ("org.pegdown"           %  "pegdown"              % "1.4.2" cross CrossVersion.Disabled) % "test",
+    "org.scalacheck"         %% "scalacheck"           % "1.11.4"            % "test",
+    "com.typesafe.play"      %% "play-test"            % PlayVersion.current % "test",
+    "uk.gov.hmrc"            %% "hmrctest"             % "2.1.0"             % "test",
+    "org.mockito"            % "mockito-all"           % "1.9.5"             % "test",
+    "uk.gov.hmrc"            %% "reactivemongo-test"   % "1.6.0"             % "test"
+  )
 
   lazy val microservice = Project(appName, file("."))
     .enablePlugins(SbtAutoBuildPlugin, SbtGitVersioning)
@@ -55,22 +55,8 @@ object HmrcBuild extends Build {
     .settings(
       resolvers := Seq(
         Resolver.bintrayRepo("hmrc", "releases"),
-        Resolver.typesafeRepo("releases")
+        Resolver.typesafeRepo("releases"),
+        Resolver.jcenterRepo
       )
     )
-}
-
-private object BuildDependencies {
-  val scalaTest              = "org.scalatest" %% "scalatest" % "2.2.0"
-  val pegdown                = "org.pegdown" % "pegdown" % "1.4.2" cross CrossVersion.Disabled
-  val scalacheck             = "org.scalacheck" %% "scalacheck" % "1.11.4"
-  val play                   = "com.typesafe.play" %% "play" % PlayVersion.current
-  val `play-test`            = "com.typesafe.play" %% "play-test" % PlayVersion.current
-  val `simple-reactivemongo` = "uk.gov.hmrc" %% "simple-reactivemongo" % "4.8.0"
-  val `reactivemongo-test`   = "uk.gov.hmrc" %% "reactivemongo-test" % "1.6.0"
-
-  val `metrics-play`         = "com.kenshoo" %% "metrics-play" % "2.3.0_0.1.8"
-  val metrics                = "com.codahale.metrics" % "metrics-graphite" % "3.0.2"
-  val hmrcTest               = "uk.gov.hmrc"  %% "hmrctest" % "1.8.0" % "test"
-  val mongoLock              = "uk.gov.hmrc"  %% "mongo-lock"              % "3.4.0"
 }
