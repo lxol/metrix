@@ -105,8 +105,10 @@ class MetricOrchestrator(metricSources: List[MetricSource],
 
         metricCache.refreshWith(filteredMetrics)
 
+        val currentGauges = metricRegistry.getGauges
+
         filteredMetrics
-          .foreach(metric => if (!metricRegistry.getGauges.containsKey(metric.name))
+          .foreach(metric => if (!currentGauges.containsKey(metric.name))
             metricRegistry.register(metric.name, CachedMetricGauge(metric.name, metricCache)))
 
         maybeUpdatedMetrics match {
