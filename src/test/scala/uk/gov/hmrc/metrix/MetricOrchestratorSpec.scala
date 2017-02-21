@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 HM Revenue & Customs
+ * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@ package uk.gov.hmrc.metrix
 
 import com.codahale.metrics.{Metric, MetricFilter, MetricRegistry}
 import org.joda.time.Duration
-import org.scalatest.Inside._
 import org.mockito.Matchers.any
 import org.mockito.Mockito._
-import org.scalatest.{BeforeAndAfterEach, Inside, LoneElement}
+import org.scalatest.Inside._
 import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
 import org.scalatest.mock.MockitoSugar
+import org.scalatest.{BeforeAndAfterEach, LoneElement}
 import uk.gov.hmrc.lock.{ExclusiveTimePeriodLock, LockRepository}
 import uk.gov.hmrc.metrix.domain.{MetricRepository, MetricSource, PersistedMetric}
 import uk.gov.hmrc.metrix.persistence.MongoMetricRepository
@@ -193,6 +193,52 @@ class MetricOrchestratorSpec extends UnitSpec
       metricRegistry.getGauges.get(notRavagedMetricName).getValue shouldBe 8
     }
 
+    "not reset value if metrics matching filter when a new value is provided" in {
+      val otherMetricName = "opened.name"
+      val notResetedMetricName = "not.reseted.name"
+      val resetableButProvidedMetricName = "reseted.name"
+
+      val acquiredMetrics = Map(otherMetricName -> 4, resetableButProvidedMetricName -> 2, notResetedMetricName -> 8)
+      val orchestrator = metricOrchestratorFor(List(sourceReturning(acquiredMetrics)))
+
+      orchestrator.attemptToUpdateRefreshAndResetMetrics(resetMetricOn = m => m.name == resetableButProvidedMetricName).futureValue shouldResultIn
+      MetricsUpdatedAndRefreshed(
+        acquiredMetrics,
+        List(PersistedMetric(otherMetricName, 4), PersistedMetric(resetableButProvidedMetricName, 2), PersistedMetric(notResetedMetricName, 8))
+      )
+
+      metricRegistry.getGauges should have size 3
+      metricRegistry.getGauges.get(otherMetricName).getValue shouldBe 4
+      metricRegistry.getGauges.get(resetableButProvidedMetricName).getValue shouldBe 2
+      metricRegistry.getGauges.get(notResetedMetricName).getValue shouldBe 8
+    }
+
+    "reset value if metrics matching reset filter and no metric is provided" in {
+      val otherMetricName = "opened.name"
+      val notResetedMetricName = "not.reseted.name"
+      val resetableMetricName = "reseted.name"
+
+      val mockMetricSource = mock[MetricSource]
+      val orchestrator = metricOrchestratorFor(List(mockMetricSource))
+
+      val acquiredMetrics = Map(otherMetricName -> 4, resetableMetricName -> 2, notResetedMetricName -> 8)
+      when(mockMetricSource.metrics(any())).thenReturn(Future.successful(acquiredMetrics))
+      orchestrator.attemptToUpdateRefreshAndResetMetrics(resetMetricOn = (metric: PersistedMetric) => {
+        metric.name == "reseted.name"
+      }).futureValue
+
+      val newAcquiredMetrics = Map(otherMetricName -> 5, notResetedMetricName -> 6)
+      when(mockMetricSource.metrics(any())).thenReturn(Future.successful(newAcquiredMetrics))
+      orchestrator.attemptToUpdateRefreshAndResetMetrics(resetMetricOn = (metric: PersistedMetric) => {
+        metric.name == "reseted.name"
+      }).futureValue
+
+      metricRegistry.getGauges should have size 3
+      metricRegistry.getGauges.get(otherMetricName).getValue shouldBe 5
+      metricRegistry.getGauges.get(resetableMetricName).getValue shouldBe 0
+      metricRegistry.getGauges.get(notResetedMetricName).getValue shouldBe 6
+    }
+
     "cache the metrics" in {
       val acquiredMetrics = Map("a" -> 1, "b" -> 2)
 
@@ -305,4 +351,3 @@ class MetricOrchestratorSpec extends UnitSpec
     }
   }
 }
-

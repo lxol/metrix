@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 HM Revenue & Customs
+ * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,17 +79,18 @@ class MetricOrchestrator(metricSources: List[MetricSource],
 
   val metricCache = new MetricCache()
 
-  private def updateMetricRepository()(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
-    Future.traverse(metricSources) { source => source.metrics }
-      .flatMap(list => {
-        val currentMetrics: Map[String, Int] = list reduce (_ ++ _)
-
-        Future.traverse(currentMetrics) {
-          case (name, value) => metricRepository.persist(PersistedMetric(name, value))
-        }.map {_ =>
-          currentMetrics
-        }
-      })
+  private def updateMetricRepository(resetOn: Option[PersistedMetric => Boolean] = None)(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
+    val resetingFilter: (PersistedMetric) => Boolean = resetOn.getOrElse((x: PersistedMetric) => false)
+    for {
+      persistedMetrics <- if (resetOn.isDefined) metricRepository.findAll() else Future(List())
+      mapFromReset = persistedMetrics.filter(resetingFilter).map { case PersistedMetric(name, _) => name -> 0 }.toMap
+      mapFromSources <- Future.traverse(metricSources)(_.metrics)
+      mapToPersist = (mapFromReset :: mapFromSources) reduce {
+        _ ++ _
+      }
+      metricsToPersist = mapToPersist.map { case (name: String, value: Int) => PersistedMetric(name, value) }.toList
+      _ <- Future.traverse(metricsToPersist) { m => metricRepository.persist(m) }
+    } yield mapToPersist
   }
 
   private def doNotSkipAny(metric: PersistedMetric): Boolean = false
@@ -97,7 +98,7 @@ class MetricOrchestrator(metricSources: List[MetricSource],
   def attemptToUpdateAndRefreshMetrics(skipReportingOn: (PersistedMetric) => Boolean = doNotSkipAny)
                                       (implicit ec: ExecutionContext): Future[MetricOrchestrationResult] = {
     lock.tryToAcquireOrRenewLock {
-      updateMetricRepository
+      updateMetricRepository()
     } flatMap { maybeUpdatedMetrics =>
       metricRepository.findAll() map { persistedMetrics =>
         persistedMetrics.filterNot(skipReportingOn)
@@ -115,6 +116,24 @@ class MetricOrchestrator(metricSources: List[MetricSource],
           case Some(updatedMetrics) => MetricsUpdatedAndRefreshed(updatedMetrics, filteredMetrics)
           case None => MetricsOnlyRefreshed(filteredMetrics)
         }
+      }
+    }
+  }
+
+  def attemptToUpdateRefreshAndResetMetrics(resetMetricOn: PersistedMetric => Boolean)
+                                           (implicit ec: ExecutionContext): Future[MetricOrchestrationResult] = {
+    for {
+      lockOnMetrics <- lock.tryToAcquireOrRenewLock(updateMetricRepository(Some(resetMetricOn)))
+      persistedMetrics <- metricRepository.findAll()
+      _ = metricCache.refreshWith(persistedMetrics)
+    } yield {
+      val currentGauges = metricRegistry.getGauges.keySet()
+      persistedMetrics
+        .filterNot(metric => currentGauges.contains(metric.name))
+        .map(metric => metricRegistry.register(metric.name, CachedMetricGauge(metric.name, metricCache)))
+      lockOnMetrics match {
+        case Some(updatedMetrics) => MetricsUpdatedAndRefreshed(updatedMetrics, persistedMetrics)
+        case None => MetricsOnlyRefreshed(persistedMetrics)
       }
     }
   }
