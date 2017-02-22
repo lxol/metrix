@@ -18,12 +18,12 @@ package uk.gov.hmrc.metrix
 
 import com.codahale.metrics.{Metric, MetricFilter, MetricRegistry}
 import org.joda.time.Duration
-import org.scalatest.Inside._
 import org.mockito.Matchers.any
 import org.mockito.Mockito._
-import org.scalatest.{BeforeAndAfterEach, Inside, LoneElement}
+import org.scalatest.Inside._
 import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
 import org.scalatest.mock.MockitoSugar
+import org.scalatest.{BeforeAndAfterEach, LoneElement}
 import uk.gov.hmrc.lock.{ExclusiveTimePeriodLock, LockRepository}
 import uk.gov.hmrc.metrix.domain.{MetricRepository, MetricSource, PersistedMetric}
 import uk.gov.hmrc.metrix.persistence.MongoMetricRepository
