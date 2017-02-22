@@ -49,8 +49,16 @@ The CacheGauges will then read the value for a given metric from MetricCache and
           skipReportingOn = optionalFilterMethodForPersistedMetrics()
         ).map(_.andLogTheResult())
         .recover { case e: RuntimeException => Logger.error(s"An error occurred processing metrics: ${e.getMessage}", e) }
-```        
-        
+```      
+
+``` scala
+    metricOrchestrator
+        .attemptToUpdateRefreshAndResetMetrics(
+          resetMetricOn = optionalFilterMethodToResetMetrics()
+        ).map(_.andLogTheResult())
+        .recover { case e: RuntimeException => Logger.error(s"An error occurred processing metrics: ${e.getMessage}", e) }
+```     
+
 ## Installing
  
 Include the following dependency in your SBT build
