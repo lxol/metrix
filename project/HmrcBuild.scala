@@ -29,18 +29,18 @@ object HmrcBuild extends Build {
 
   val appDependencies = Seq(
     "com.typesafe.play"      %% "play"                 % PlayVersion.current % "provided",
-    "uk.gov.hmrc"            %% "simple-reactivemongo" % "5.1.0",
+    "uk.gov.hmrc"            %% "simple-reactivemongo" % "5.2.0",
     "de.threedimensions"     %% "metrics-play"         % "2.5.13"            % "provided",
     "com.codahale.metrics"   %  "metrics-graphite"     % "3.0.2"             % "provided",
-    "uk.gov.hmrc"            %% "mongo-lock"           % "4.0.0",
+    "uk.gov.hmrc"            %% "mongo-lock"           % "4.1.0",
 
     "org.scalatest"          %% "scalatest"            % "2.2.4"             % "test",
     ("org.pegdown"           %  "pegdown"              % "1.4.2" cross CrossVersion.Disabled) % "test",
     "org.scalacheck"         %% "scalacheck"           % "1.11.4"            % "test",
     "com.typesafe.play"      %% "play-test"            % PlayVersion.current % "test",
-    "uk.gov.hmrc"            %% "hmrctest"             % "2.1.0"             % "test",
+    "uk.gov.hmrc"            %% "hmrctest"             % "2.3.0"             % "test",
     "org.mockito"            % "mockito-all"           % "1.9.5"             % "test",
-    "uk.gov.hmrc"            %% "reactivemongo-test"   % "1.6.0"             % "test"
+    "uk.gov.hmrc"            %% "reactivemongo-test"   % "2.0.0"             % "test"
   )
 
   lazy val microservice = Project(appName, file("."))
