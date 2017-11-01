@@ -50,7 +50,7 @@ object HmrcBuild extends Build {
     .settings(
       targetJvm := "jvm-1.8",
       libraryDependencies ++= appDependencies,
-      crossScalaVersions := Seq("2.11.7", "2.10.4")
+      scalaVersion := "2.11.11"
     )
     .settings(
       resolvers := Seq(
