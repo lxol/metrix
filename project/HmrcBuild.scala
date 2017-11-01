@@ -35,7 +35,7 @@ object HmrcBuild extends Build {
     "uk.gov.hmrc"            %% "mongo-lock"           % "5.0.0",
 
     "org.scalatest"          %% "scalatest"            % "2.2.4"             % "test",
-    ("org.pegdown"           %  "pegdown"              % "1.4.2" cross CrossVersion.Disabled) % "test",
+    "org.pegdown"           %  "pegdown"               % "1.4.2"             % "test",
     "org.scalacheck"         %% "scalacheck"           % "1.11.4"            % "test",
     "com.typesafe.play"      %% "play-test"            % PlayVersion.current % "test",
     "uk.gov.hmrc"            %% "hmrctest"             % "2.3.0"             % "test",
