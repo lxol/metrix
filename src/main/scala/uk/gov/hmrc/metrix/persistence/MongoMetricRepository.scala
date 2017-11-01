@@ -22,6 +22,7 @@ import reactivemongo.api.{DB, ReadPreference}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.metrix.domain.{MetricRepository, PersistedMetric}
 import uk.gov.hmrc.mongo.ReactiveRepository
+import reactivemongo.play.json.ImplicitBSONHandlers._
 
 import scala.concurrent.{ExecutionContext, Future}
 
