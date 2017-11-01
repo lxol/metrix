@@ -35,7 +35,7 @@ object HmrcBuild extends Build {
     "uk.gov.hmrc"            %% "mongo-lock"           % "5.0.0",
 
     "org.scalatest"          %% "scalatest"            % "2.2.4"             % "test",
-    ("org.pegdown"           %  "pegdown"              % "1.4.2" cross CrossVersion.Disabled) % "test",
+    "org.pegdown"           %  "pegdown"               % "1.4.2"             % "test",
     "org.scalacheck"         %% "scalacheck"           % "1.11.4"            % "test",
     "com.typesafe.play"      %% "play-test"            % PlayVersion.current % "test",
     "uk.gov.hmrc"            %% "hmrctest"             % "2.3.0"             % "test",
@@ -50,7 +50,7 @@ object HmrcBuild extends Build {
     .settings(
       targetJvm := "jvm-1.8",
       libraryDependencies ++= appDependencies,
-      crossScalaVersions := Seq("2.11.7", "2.10.4")
+      scalaVersion := "2.11.11"
     )
     .settings(
       resolvers := Seq(
