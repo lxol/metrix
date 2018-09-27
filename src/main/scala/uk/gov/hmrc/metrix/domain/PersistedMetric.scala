@@ -16,4 +16,10 @@
 
 package uk.gov.hmrc.metrix.domain
 
+import play.api.libs.json.{Json, OFormat}
+
 final case class PersistedMetric(name: String, count: Int)
+
+object PersistedMetric {
+  val format: OFormat[PersistedMetric] = Json.format[PersistedMetric]
+}

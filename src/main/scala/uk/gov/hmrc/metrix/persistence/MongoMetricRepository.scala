@@ -27,7 +27,7 @@ import reactivemongo.play.json.ImplicitBSONHandlers._
 import scala.concurrent.{ExecutionContext, Future}
 
 class MongoMetricRepository(collectionName: String = "metrics")(implicit mongo: () => DB)
-  extends ReactiveRepository[PersistedMetric, BSONObjectID](collectionName, mongo, Json.format[PersistedMetric])
+  extends ReactiveRepository[PersistedMetric, BSONObjectID](collectionName, mongo, PersistedMetric.format)
   with MetricRepository {
 
   override def indexes: Seq[Index] = Seq(

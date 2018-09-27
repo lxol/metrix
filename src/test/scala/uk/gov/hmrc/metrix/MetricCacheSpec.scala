@@ -60,6 +60,4 @@ class MetricCacheSpec extends UnitSpec {
       metrics.valueOf("b") shouldBe 0
     }
   }
-
 }
-
