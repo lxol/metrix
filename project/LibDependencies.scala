@@ -30,13 +30,13 @@ object LibDependencies {
     ),
     play25 = Seq(
       "com.typesafe.play" %% "play"                 % play25Version,
-      "uk.gov.hmrc"       %% "mongo-lock"           % "6.0.0-play-25-SNAPSHOT",
-      "uk.gov.hmrc"       %% "simple-reactivemongo" % "7.0.0-play-25-SNAPSHOT"
+      "uk.gov.hmrc"       %% "mongo-lock"           % "6.0.0-play-25",
+      "uk.gov.hmrc"       %% "simple-reactivemongo" % "7.0.0-play-25"
     ),
     play26 = Seq(
       "com.typesafe.play" %% "play"                 % play26Version,
-      "uk.gov.hmrc"       %% "mongo-lock"           % "6.0.0-play-26-SNAPSHOT",
-      "uk.gov.hmrc"       %% "simple-reactivemongo" % "7.0.0-play-26-SNAPSHOT"
+      "uk.gov.hmrc"       %% "mongo-lock"           % "6.0.0-play-26",
+      "uk.gov.hmrc"       %% "simple-reactivemongo" % "7.0.0-play-26"
     )
   )
 
@@ -49,12 +49,12 @@ object LibDependencies {
       "uk.gov.hmrc"    %% "hmrctest"   % "2.3.0"  % Test
     ),
     play25 = Seq(
-      "com.typesafe.play" %% "play-test"          % play25Version            % Test,
-      "uk.gov.hmrc"       %% "reactivemongo-test" % "4.0.0-play-25-SNAPSHOT" % Test
+      "com.typesafe.play" %% "play-test"          % play25Version   % Test,
+      "uk.gov.hmrc"       %% "reactivemongo-test" % "4.1.0-play-25" % Test
     ),
     play26 = Seq(
-      "com.typesafe.play" %% "play-test"          % play26Version            % Test,
-      "uk.gov.hmrc"       %% "reactivemongo-test" % "4.0.0-play-26-SNAPSHOT" % Test
+      "com.typesafe.play" %% "play-test"          % play26Version   % Test,
+      "uk.gov.hmrc"       %% "reactivemongo-test" % "4.1.0-play-26" % Test
     )
   )
 }
