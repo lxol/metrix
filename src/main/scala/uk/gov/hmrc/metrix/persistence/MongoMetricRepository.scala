@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import reactivemongo.play.json.ImplicitBSONHandlers._
 import scala.concurrent.{ExecutionContext, Future}
 
 class MongoMetricRepository(collectionName: String = "metrics")(implicit mongo: () => DB)
-  extends ReactiveRepository[PersistedMetric, BSONObjectID](collectionName, mongo, Json.format[PersistedMetric])
+  extends ReactiveRepository[PersistedMetric, BSONObjectID](collectionName, mongo, PersistedMetric.format)
   with MetricRepository {
 
   override def indexes: Seq[Index] = Seq(

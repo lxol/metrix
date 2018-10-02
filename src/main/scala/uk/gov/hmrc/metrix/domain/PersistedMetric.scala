@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,4 +16,10 @@
 
 package uk.gov.hmrc.metrix.domain
 
+import play.api.libs.json.{Json, OFormat}
+
 final case class PersistedMetric(name: String, count: Int)
+
+object PersistedMetric {
+  val format: OFormat[PersistedMetric] = Json.format[PersistedMetric]
+}
