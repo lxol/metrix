@@ -1,7 +1,7 @@
 
 # metrix
 
-[![Build Status](https://travis-ci.org/hmrc/metrix.svg?branch=master)](https://travis-ci.org/hmrc/metrix) [ ![Download](https://api.bintray.com/packages/hmrc/releases/metrix/images/download.svg) ](https://bintray.com/hmrc/releases/metrix/_latestVersion)
+[ ![Download](https://api.bintray.com/packages/hmrc/releases/metrix/images/download.svg) ](https://bintray.com/hmrc/releases/metrix/_latestVersion)
 
 ## Name origins
 We needed to create a new library to contain the classes and mechanisms needed to produce and report on slow-running metrics.
@@ -68,10 +68,8 @@ resolvers += Resolver.bintrayRepo("hmrc", "releases")
  
 libraryDependencies += "uk.gov.hmrc" %% "metrix" % "[INSERT-VERSION]" 
 ```
-* For Play 2.5.x and simple-reactivemongo 7.x.x use versions <=3.x.x-play-25
-* For Play 2.6.x and simple-reactivemongo 7.x.x use versions <=3.x.x-play-26
-* For simple-reactivemongo below 7.x.x use versions <3.0.0
-
+## Compatibility
+Metrix since version 3.0.0 uses the latest ReactiveMongo (https://github.com/ReactiveMongo/ReactiveMongo) instead of HMRC fork of it (https://github.com/hmrc/ReactiveMongo). Please review your dependencies if you upgrade. In particular you should no longer use https://github.com/hmrc/Play-ReactiveMongo/ in your microservice. 
 
 ### License
 
