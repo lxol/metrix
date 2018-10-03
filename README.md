@@ -68,6 +68,10 @@ resolvers += Resolver.bintrayRepo("hmrc", "releases")
  
 libraryDependencies += "uk.gov.hmrc" %% "metrix" % "[INSERT-VERSION]" 
 ```
+* For Play 2.5.x and simple-reactivemongo 7.x.x use versions <=3.x.x-play-25
+* For Play 2.6.x and simple-reactivemongo 7.x.x use versions <=3.x.x-play-26
+* For simple-reactivemongo below 7.x.x use versions <3.0.0
+
 
 ### License
 
