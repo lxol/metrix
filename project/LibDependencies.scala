@@ -30,14 +30,14 @@ object LibDependencies {
     play25 = Seq(
       "com.typesafe.play"     %% "play"                 % play25Version,
       "de.threedimensions"    %% "metrics-play"         % "2.5.13",
-      "uk.gov.hmrc"           %% "mongo-lock"           % "6.2.0-play-25",
-      "uk.gov.hmrc"           %% "simple-reactivemongo" % "7.4.0-play-25"
+      "uk.gov.hmrc"           %% "mongo-lock"           % "6.4.0-play-25",
+      "uk.gov.hmrc"           %% "simple-reactivemongo" % "7.6.0-play-25"
     ),
     play26 = Seq(
       "com.kenshoo"           %% "metrics-play"         % "2.6.6_0.6.2",
       "com.typesafe.play"     %% "play"                 % play26Version,
-      "uk.gov.hmrc"           %% "mongo-lock"           % "6.2.0-play-26",
-      "uk.gov.hmrc"           %% "simple-reactivemongo" % "7.4.0-play-26"
+      "uk.gov.hmrc"           %% "mongo-lock"           % "6.4.0-play-26",
+      "uk.gov.hmrc"           %% "simple-reactivemongo" % "7.6.0-play-26"
     )
   )
 
@@ -51,11 +51,11 @@ object LibDependencies {
     ),
     play25 = Seq(
       "com.typesafe.play" %% "play-test"          % play25Version   % Test,
-      "uk.gov.hmrc"       %% "reactivemongo-test" % "4.2.0-play-25" % Test
+      "uk.gov.hmrc"       %% "reactivemongo-test" % "4.4.0-play-25" % Test
     ),
     play26 = Seq(
       "com.typesafe.play" %% "play-test"          % play26Version   % Test,
-      "uk.gov.hmrc"       %% "reactivemongo-test" % "4.2.0-play-26" % Test
+      "uk.gov.hmrc"       %% "reactivemongo-test" % "4.4.0-play-26" % Test
     )
   )
 }
