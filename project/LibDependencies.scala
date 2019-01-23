@@ -20,24 +20,24 @@ object LibDependencies {
 
   def apply(): Seq[ModuleID] = compile ++ test
 
-  private val play25Version = "2.5.12"
+  private val play25Version = "2.5.19"
   private val play26Version = "2.6.20"
 
   private val compile: Seq[ModuleID] = PlayCrossCompilation.dependencies(
     shared = Seq(
-      "io.dropwizard.metrics" % "metrics-graphite"      % "3.2.5"
+      "io.dropwizard.metrics" % "metrics-graphite"      % "3.2.6"
     ),
     play25 = Seq(
       "com.typesafe.play"     %% "play"                 % play25Version,
       "de.threedimensions"    %% "metrics-play"         % "2.5.13",
-      "uk.gov.hmrc"           %% "mongo-lock"           % "6.4.0-play-25",
-      "uk.gov.hmrc"           %% "simple-reactivemongo" % "7.6.0-play-25"
+      "uk.gov.hmrc"           %% "mongo-lock"           % "6.6.0-play-25",
+      "uk.gov.hmrc"           %% "simple-reactivemongo" % "7.9.0-play-25"
     ),
     play26 = Seq(
       "com.kenshoo"           %% "metrics-play"         % "2.6.6_0.6.2",
       "com.typesafe.play"     %% "play"                 % play26Version,
-      "uk.gov.hmrc"           %% "mongo-lock"           % "6.4.0-play-26",
-      "uk.gov.hmrc"           %% "simple-reactivemongo" % "7.6.0-play-26"
+      "uk.gov.hmrc"           %% "mongo-lock"           % "6.6.0-play-26",
+      "uk.gov.hmrc"           %% "simple-reactivemongo" % "7.9.0-play-26"
     )
   )
 
@@ -45,17 +45,18 @@ object LibDependencies {
     shared = Seq(
       "org.mockito"    % "mockito-all" % "1.9.5"  % Test,
       "org.pegdown"    % "pegdown"     % "1.6.0"  % Test,
-      "org.scalacheck" %% "scalacheck" % "1.11.4" % Test,
+      "org.scalacheck" %% "scalacheck" % "1.11.6" % Test,
       "org.scalatest"  %% "scalatest"  % "3.0.5"  % Test,
       "uk.gov.hmrc"    %% "hmrctest"   % "2.3.0"  % Test
+
     ),
     play25 = Seq(
       "com.typesafe.play" %% "play-test"          % play25Version   % Test,
-      "uk.gov.hmrc"       %% "reactivemongo-test" % "4.4.0-play-25" % Test
+      "uk.gov.hmrc"       %% "reactivemongo-test" % "4.6.0-play-25" % Test
     ),
     play26 = Seq(
       "com.typesafe.play" %% "play-test"          % play26Version   % Test,
-      "uk.gov.hmrc"       %% "reactivemongo-test" % "4.4.0-play-26" % Test
+      "uk.gov.hmrc"       %% "reactivemongo-test" % "4.6.0-play-26" % Test
     )
   )
 }
